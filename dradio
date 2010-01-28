@@ -1,0 +1,141 @@
+#!/bin/bash
+
+# Copyleft 2010 by Keywan Najafi Tonekaboni, me@prometoys.net 
+# http://prometoys.net
+# Dieses Wrapper-Skript für Streamripper steht unter GPL v. 2 
+
+
+# Das ist ein ganz einfaches Skript zum Aufnehmen von Radio-Sendungen per
+# Streamripper. Anstelle der ganzen Optionen von Streamripper reicht ein
+# ganz einfacher Aufruf: 
+
+# Aufnahme von DRadio Wissen für 60 Minuten mit Label:
+# dradio dwissen 60 hoersaal
+
+# Das Skript nimmt immer in einem einzigen Happen auf. Weitere Tips zur 
+# Bedienung weiter unten.
+
+# Zum Start folgende Angaben bearbeiten:
+
+# Ort wo die Aufnahmen gespeichert werden sollen
+TARGET="/tmp"
+
+#  Maximalle Füllrate in Prozent. Ist auf der angegebenen Partition mehr  
+#  Platz belegt, wird die Aufnahme nicht gestartet. 
+MAX_USED_SPACE_RATE=98
+
+# USERAGENT: So gibt sich Streamripper gegenüber dem Server aus. Um eine 
+# Aussperrung zu vermeiden, versucht einen gültigen Agent zu ergattern. 
+# Ein paar Beispiele:
+#
+# Mozilla/4.0 (compatible; MSIE 7.0b; Windows NT 6.0)
+# Mozilla/4.0 (compatible; MSIE 7.0; Windows NT 5.1)
+# Microsoft-WebDAV-MiniRedir/6.1.7600
+# Mozilla/5.0 (X11; U; Linux i686; de; rv:1.8.1.16) Gecko/20080702 Firefox/2.0.0.16
+# Mozilla/5.0 (Windows; U; Windows NT 5.1; de; rv:1.9.1.7) Gecko/20091221 Firefox/3.5.7
+# VLC media player - version 1.0.2 Goldeneye - (c) 1996-2009 the VideoLAN team
+USERAGENT='"Microsoft-WebDAV-MiniRedir/6.1.7600"'
+
+# Optionale Argumente für Streamripper
+OPT=""
+
+# Falls am Desktop gestartet und notify-send installiert ist, gibt es 
+# die Öglichkeit Benachrichtigungen anzuzeigen. Dazu auf TRUE umstellen.
+MESSAGING=FALSE
+
+# Aufruf: dradio SENDER [ ZEIT ] [ LABEL ]
+# SENDER: dlf, dradio, dwissen, wdr1, wdr2, wdr3, wdr5, 1live oder fhe
+# ZEIT: Länge der Aufnahme in Minuten (optional)
+# LABEL: Freier Text der in dem Dateinamen eingetragen wird (optional)
+
+# Beispiel 55 Minuten DLF aufnehmen: dradio dlf 55
+
+# Dieses Programm benötigt streamripper und optional notify-send
+
+# Zeitgesteurte Aufnahmen mit cron:
+# Crontab editieren mit: crontab -e
+# Beispiel: 46m DLF aufnehmen an jedem Montag um 19:14 Uhr
+#
+# 14 19 * * 2 /usr/local/bin/dradio dlf 46 feature >/dev/null 2>&1 # DLF Feature
+# 
+# Zeitgesteuerte Aufnahme mit at:
+# at aufrufen mit z.B.: az 19:14
+# Befehl eingeben: /usr/local/bin/dradio dlf 46 feature
+# Enter drücken, dann CTRL+D
+
+
+# Variablen für das Skript, besser nicht ändern ;)
+TIME="60"
+STREAM=""
+SENDER="dlf, dradio, dwissen, wdr[2,3,5], 1live, fhe"
+CHANNEL=$1
+LABEL=""
+
+if [ $# -lt 1 ] ; then
+	echo "Kein Sender gewählt: $SENDER"
+	exit 1
+fi
+
+USED_RATE=`df -h $TARGET | grep ^/ | cut -c 40-42`
+if [ $(($USED_RATE+0)) -ge $MAX_USED_SPACE_RATE ] ; then
+	echo "Partition des Zielverzeichnisses $TARGET zu ${USED_RATE}% belegt.
+Keine Aufnahme, da zuwenig freier Speicher."
+	exit 1
+fi
+
+if [ $# -gt 1 ] ; then
+	OPT="$OPT -l $(($2*$TIME))"
+fi
+
+if [ $# -gt 2 ] ; then
+	LABEL=$3
+fi
+
+if [ $CHANNEL == dlf ] ; then
+#        echo "DLF"
+	STREAM="http://dradio-mp3.t-bn.de/dlf128k_live"
+elif [ $CHANNEL == dkultur ] ; then
+#	echo "D-Kultur"
+	STREAM="http://dradio-mp3.t-bn.de/dlr128k_live"
+elif [ $CHANNEL == dwissen ] ; then
+#	echo "DWissen"
+	STREAM="http://dradio.ic.llnwd.net/stream/dradio_dwissen_m_a"
+elif [ $CHANNEL == 1live ] || [ $CHANNEL == l1ve ] ; then
+	STREAM="http://gffstream.ic.llnwd.net/stream/gffstream_stream_wdr_einslive_a"
+elif [ $CHANNEL == wdr2 ] ; then
+	STREAM="http://gffstream.ic.llnwd.net/stream/gffstream_w17a"
+elif [ $CHANNEL == wdr3 ] ; then
+	STREAM="http://gffstream.ic.llnwd.net/stream/gffstream_w21a"
+elif [ $CHANNEL == wdr5 ] ; then
+	STREAM="http://gffstream.ic.llnwd.net/stream/gffstream_w19a"
+elif [ $CHANNEL == fhe ] ; then
+	STREAM="http://gffstream.ic.llnwd.net/stream/gffstream_w20a"
+else
+	echo "$CHANNEL ist kein gueltiger Sender: $SENDER"
+	exit 1
+fi
+
+echo "Starte Aufname"
+#echo streamripper $STREAM -d $TARGET -s -a "$CHANNEL-%d-$LABEL" $OPT -u $USERAGENT -A  --quiet
+streamripper $STREAM -d $TARGET -s -a "$CHANNEL-%d-$LABEL" $OPT -u $USERAGENT -A  --quiet
+
+CUEFILE=${TARGET}${CHANNEL}-`date +%Y_%m_%d_`*.cue
+if [ -f $CUEFILE ] ; then
+	echo "Aufraeumen: $CUEFILE"
+	rm $CUEFILE
+fi
+
+# Messaging
+# Benachrichtigung mit notify-send
+
+if [ $MESSAGING == TRUE ] ; then
+	MESSAGE="Neue Aufnahme abgeschlossen"
+	TITLE="Aufnahme $CHANNEL $LABEL"
+	NOTIFY_TIME="6000"
+	QUIET=""
+	export DISPLAY=`w | grep x-session | cut -c 19-21 | sed -e "s/ $//"`
+
+	if [ x`which notify-send` != x ] && [ x$DISPLAY != x ] ; then
+	    notify-send "$TITLE" "$MESSAGE" -t $NOTIFY_TIME -u normal -i gtk-dialog-info
+	fi
+fi

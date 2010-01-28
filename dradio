@@ -31,6 +31,7 @@ MAX_USED_SPACE_RATE=98
 # Mozilla/4.0 (compatible; MSIE 7.0b; Windows NT 6.0)
 # Mozilla/4.0 (compatible; MSIE 7.0; Windows NT 5.1)
 # Microsoft-WebDAV-MiniRedir/6.1.7600
+# gvfs/1.4.1
 # Mozilla/5.0 (X11; U; Linux i686; de; rv:1.8.1.16) Gecko/20080702 Firefox/2.0.0.16
 # Mozilla/5.0 (Windows; U; Windows NT 5.1; de; rv:1.9.1.7) Gecko/20091221 Firefox/3.5.7
 # VLC media player - version 1.0.2 Goldeneye - (c) 1996-2009 the VideoLAN team
@@ -67,7 +68,7 @@ MESSAGING=FALSE
 # Variablen für das Skript, besser nicht ändern ;)
 TIME="60"
 STREAM=""
-SENDER="dlf, dradio, dwissen, wdr[2,3,5], 1live, fhe"
+SENDER="dlf, dradio, dwissen, wdr[2,3,5], 1live, fhe, on3radio"
 CHANNEL=$1
 LABEL=""
 
@@ -110,6 +111,8 @@ elif [ $CHANNEL == wdr5 ] ; then
 	STREAM="http://gffstream.ic.llnwd.net/stream/gffstream_w19a"
 elif [ $CHANNEL == fhe ] ; then
 	STREAM="http://gffstream.ic.llnwd.net/stream/gffstream_w20a"
+elif [ $CHANNEL == on3radio ] ; then
+	STREAM="http://gffstream.ic.llnwd.net/stream/gffstream_w9b"
 else
 	echo "$CHANNEL ist kein gueltiger Sender: $SENDER"
 	exit 1

@@ -2,7 +2,7 @@
 
 # Copyleft 2010 by Keywan Najafi Tonekaboni, me@prometoys.net 
 # http://prometoys.net
-# Dieses Wrapper-Skript für Streamripper steht unter GPL v. 2 
+# Dieses Wrapper-Skript für Streamripper steht unter GPL v. 3
 
 
 # Das ist ein ganz einfaches Skript zum Aufnehmen von Radio-Sendungen per
@@ -17,19 +17,23 @@
 
 # Zum Start folgende Angaben bearbeiten:
 
-# Ort wo die Aufnahmen gespeichert werden sollen
-TARGET="/tmp"
+# Ort wo die Aufnahmen gespeichert werden sollen. Pfad mit / abschliessen.
+# Beispiel: TARGET="/tmp/"
+
+TARGET="/tmp/"
 
 #  Maximalle Füllrate in Prozent. Ist auf der angegebenen Partition mehr  
 #  Platz belegt, wird die Aufnahme nicht gestartet. 
+
 MAX_USED_SPACE_RATE=98
 
 # Wenn die maximale Füllrate fast erreicht ist, kann auch ein Tool zum 
 # vorzeitigen Warnen genutzt werden.
 
-# MAX_USED_SPACE_RATE_WARN=98
+MAX_USED_SPACE_RATE_WARN=90
+
 # WARNINGTOOL="/usr/local/bin/gesms" # e.g. tool to send sms/text message
-# WARNINGTOOL_OPT=0123456789  # e.g. mobile number
+# WARNINGTOOL_OPT=0123456789 # e.g. mobile number
 
 # USERAGENT: So gibt sich Streamripper gegenüber dem Server aus. Um eine 
 # Aussperrung zu vermeiden, versucht einen gültigen Agent zu ergattern. 
@@ -42,13 +46,16 @@ MAX_USED_SPACE_RATE=98
 # Mozilla/5.0 (X11; U; Linux i686; de; rv:1.8.1.16) Gecko/20080702 Firefox/2.0.0.16
 # Mozilla/5.0 (Windows; U; Windows NT 5.1; de; rv:1.9.1.7) Gecko/20091221 Firefox/3.5.7
 # VLC media player - version 1.0.2 Goldeneye - (c) 1996-2009 the VideoLAN team
+
 USERAGENT='"Microsoft-WebDAV-MiniRedir/6.1.7600"'
 
 # Optionale Argumente für Streamripper
+
 OPT=""
 
 # Falls am Desktop gestartet und notify-send installiert ist, gibt es 
-# die Öglichkeit Benachrichtigungen anzuzeigen. Dazu auf TRUE umstellen.
+# die Möglichkeit Benachrichtigungen anzuzeigen. Dazu auf TRUE umstellen.
+
 MESSAGING=FALSE
 
 # Aufruf: dradio SENDER [ ZEIT ] [ LABEL ]
@@ -101,13 +108,10 @@ if [ $# -gt 2 ] ; then
 fi
 
 if [ $CHANNEL == dlf ] ; then
-#        echo "DLF"
 	STREAM="http://dradio.ic.llnwd.net/stream/dradio_dlf_m_a"
 elif [ $CHANNEL == dkultur ] ; then
-#	echo "D-Kultur"
 	STREAM="http://dradio.ic.llnwd.net/stream/dradio_dkultur_m_a"
 elif [ $CHANNEL == dwissen ] ; then
-#	echo "DWissen"
 	STREAM="http://dradio.ic.llnwd.net/stream/dradio_dwissen_m_a"
 elif [ $CHANNEL == 1live ] || [ $CHANNEL == l1ve ] ; then
 	STREAM="http://gffstream.ic.llnwd.net/stream/gffstream_stream_wdr_einslive_a"
@@ -118,11 +122,15 @@ elif [ $CHANNEL == wdr3 ] ; then
 elif [ $CHANNEL == wdr4 ] ; then
 	STREAM="http://gffstream.ic.llnwd.net/stream/gffstream_w18b"
 elif [ $CHANNEL == wdr5 ] ; then
-	STREAM="http://gffstream.ic.llnwd.net/stream/gffstream_w19a"
+	STREAM="http://gffstream.ic.llnwd.net/stream/gffstream_w19b"
 elif [ $CHANNEL == fhe ] ; then
 	STREAM="http://gffstream.ic.llnwd.net/stream/gffstream_w20a"
 elif [ $CHANNEL == on3radio ] ; then
 	STREAM="http://gffstream.ic.llnwd.net/stream/gffstream_w9b"
+elif [ $CHANNEL == hertz ] ; then
+	STREAM="http://stream.radiohertz.de/hertz-q5.ogg"
+elif [ $CHANNEL == hertzlab ] ; then
+	STREAM="http://streamlab.radiohertz.de/hertz-q5.ogg"
 else
 	echo "$CHANNEL ist kein gueltiger Sender: $SENDER"
 	exit 1
@@ -130,7 +138,7 @@ fi
 
 echo "Starte Aufname"
 #echo streamripper $STREAM -d $TARGET -s -a "$CHANNEL-%d-$LABEL" $OPT -u $USERAGENT -A  --quiet
-streamripper $STREAM -d $TARGET -s -a "$CHANNEL-%d-$LABEL" $OPT -u $USERAGENT -A  --quiet
+streamripper $STREAM -d $TARGET -s -a "$CHANNEL-%d-$LABEL" $OPT -u $USERAGENT -A -i --quiet
 
 # ID3-Tag setzten
 if [ x$LABEL != x ] ; then
@@ -149,13 +157,13 @@ done
 
 # Warnung ueber knappen Speicherplatz
 
-if [ $(($USED_RATE+0)) -ge $MAX_USED_SPACE_RATE_WARN ] ; then
+if [ $(($USED_RATE+0)) -gt $(($MAX_USED_SPACE_RATE_WARN+0)) ] && [ x$WARNINGTOOL != x ] ; then
 	WARNING_DISKSPACE="Achtung: Partition des Zielverzeichnisses $TARGET zu ${USED_RATE}% belegt. $CHANNEL - $DATE - $LABEL "
 	if [ -e /tmp/.warnsms ]; then
         	echo "Already send text message: $WARNING_DISKSPACE"
 	else
         	touch /tmp/.warnsms
-		echo $WARNING_DISKSPACE
+		echo $WARNINGTOOL $WARNINGTOOL_OPT $WARNING_DISKSPACE
 		$WARNINGTOOL $WARNINGTOOL_OPT $WARNING_DISKSPACE
 	fi
 fi

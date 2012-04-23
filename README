@@ -1,0 +1,19 @@
+Derzeit befindet sich die Dokumentation als Kommentar im Skript.
+Bitte dort nachsehen.
+
+Installation:
+
+- Im Pfad ablegen (z.B. /usr/local/bin/) und ausführbahr machen.
+- Variablen im Skript anpassen (vor allem TARGET)
+
+Aufruf:
+
+dradio SENDER [ ZEIT [LABEL] ] 
+
+SENDER: dlf, dkultur,... siehe Skript
+ZEIT: Aufnahmedauer in Minuten
+LABEL: Zeichenkette die zum Dateinamen hinzugefügt wird.
+
+
+
+

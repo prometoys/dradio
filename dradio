@@ -24,6 +24,13 @@ TARGET="/tmp"
 #  Platz belegt, wird die Aufnahme nicht gestartet. 
 MAX_USED_SPACE_RATE=98
 
+# Wenn die maximale Füllrate fast erreicht ist, kann auch ein Tool zum 
+# vorzeitigen Warnen genutzt werden.
+
+# MAX_USED_SPACE_RATE_WARN=98
+# WARNINGTOOL="/usr/local/bin/gesms" # e.g. tool to send sms/text message
+# WARNINGTOOL_OPT=0123456789  # e.g. mobile number
+
 # USERAGENT: So gibt sich Streamripper gegenüber dem Server aus. Um eine 
 # Aussperrung zu vermeiden, versucht einen gültigen Agent zu ergattern. 
 # Ein paar Beispiele:
@@ -45,7 +52,7 @@ OPT=""
 MESSAGING=FALSE
 
 # Aufruf: dradio SENDER [ ZEIT ] [ LABEL ]
-# SENDER: dlf, dradio, dwissen, wdr1, wdr2, wdr3, wdr5, 1live oder fhe
+# SENDER: siehe $SENDER
 # ZEIT: Länge der Aufnahme in Minuten (optional)
 # LABEL: Freier Text der in dem Dateinamen eingetragen wird (optional)
 
@@ -68,9 +75,10 @@ MESSAGING=FALSE
 # Variablen für das Skript, besser nicht ändern ;)
 TIME="60"
 STREAM=""
-SENDER="dlf, dradio, dwissen, wdr[2,3,5], 1live, fhe, on3radio"
+SENDER="dlf, dradio, dwissen, wdr[2,3,4,5], 1live, fhe, on3radio"
 CHANNEL=$1
 LABEL=""
+DATE=`date +%Y_%m_%d_%H`
 
 if [ $# -lt 1 ] ; then
 	echo "Kein Sender gewählt: $SENDER"
@@ -94,10 +102,10 @@ fi
 
 if [ $CHANNEL == dlf ] ; then
 #        echo "DLF"
-	STREAM="http://dradio-mp3.t-bn.de/dlf128k_live"
+	STREAM="http://dradio.ic.llnwd.net/stream/dradio_dlf_m_a"
 elif [ $CHANNEL == dkultur ] ; then
 #	echo "D-Kultur"
-	STREAM="http://dradio-mp3.t-bn.de/dlr128k_live"
+	STREAM="http://dradio.ic.llnwd.net/stream/dradio_dkultur_m_a"
 elif [ $CHANNEL == dwissen ] ; then
 #	echo "DWissen"
 	STREAM="http://dradio.ic.llnwd.net/stream/dradio_dwissen_m_a"
@@ -107,6 +115,8 @@ elif [ $CHANNEL == wdr2 ] ; then
 	STREAM="http://gffstream.ic.llnwd.net/stream/gffstream_w17a"
 elif [ $CHANNEL == wdr3 ] ; then
 	STREAM="http://gffstream.ic.llnwd.net/stream/gffstream_w21a"
+elif [ $CHANNEL == wdr4 ] ; then
+	STREAM="http://gffstream.ic.llnwd.net/stream/gffstream_w18b"
 elif [ $CHANNEL == wdr5 ] ; then
 	STREAM="http://gffstream.ic.llnwd.net/stream/gffstream_w19a"
 elif [ $CHANNEL == fhe ] ; then
@@ -122,11 +132,34 @@ echo "Starte Aufname"
 #echo streamripper $STREAM -d $TARGET -s -a "$CHANNEL-%d-$LABEL" $OPT -u $USERAGENT -A  --quiet
 streamripper $STREAM -d $TARGET -s -a "$CHANNEL-%d-$LABEL" $OPT -u $USERAGENT -A  --quiet
 
-CUEFILE=${TARGET}${CHANNEL}-`date +%Y_%m_%d_`*.cue
-if [ -f $CUEFILE ] ; then
-	echo "Aufraeumen: $CUEFILE"
-	rm $CUEFILE
+# ID3-Tag setzten
+if [ x$LABEL != x ] ; then
+   echo "id3v2 -a $CHANNEL -A $LABEL ${TARGET}${CHANNEL}-$DATE*-$LABEL.mp3"
+   id3v2 -a $CHANNEL -A $LABEL ${TARGET}${CHANNEL}-$DATE*-$LABEL.mp3
 fi
+
+CUEFILES=${TARGET}${CHANNEL}-`date +%Y_%m_%d_`*.cue
+for FILE in $CUEFILES ; do
+	if [ -f $FILE ] ; then
+		echo "Aufraeumen: $FILE"
+		rm $FILE
+	fi
+done
+
+
+# Warnung ueber knappen Speicherplatz
+
+if [ $(($USED_RATE+0)) -ge $MAX_USED_SPACE_RATE_WARN ] ; then
+	WARNING_DISKSPACE="Achtung: Partition des Zielverzeichnisses $TARGET zu ${USED_RATE}% belegt. $CHANNEL - $DATE - $LABEL "
+	if [ -e /tmp/.warnsms ]; then
+        	echo "Already send text message: $WARNING_DISKSPACE"
+	else
+        	touch /tmp/.warnsms
+		echo $WARNING_DISKSPACE
+		$WARNINGTOOL $WARNINGTOOL_OPT $WARNING_DISKSPACE
+	fi
+fi
+
 
 # Messaging
 # Benachrichtigung mit notify-send

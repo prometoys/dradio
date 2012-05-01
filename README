@@ -6,6 +6,16 @@ Installation:
 - Im Pfad ablegen (z.B. /usr/local/bin/) und ausführbahr machen.
 - Variablen im Skript anpassen (vor allem TARGET)
 
+Vorraussetzungen:
+
+- streamripper muss installiert sein und im Pfad
+
+- Erweiterungen: wenn notify-send installiert ist, sind
+  Desktop-Benachrichtigungen möglich, wenn die Aufname 
+  abgeschlossen ist.
+
+- 
+
 Aufruf:
 
 dradio SENDER [ ZEIT [LABEL] ] 

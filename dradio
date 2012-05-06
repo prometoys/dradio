@@ -156,8 +156,13 @@ else
 fi
 
 # ID3-Tag setzten
-if [ x$LABEL != x ] ; then
-   debug "id3v2 -a $CHANNEL -A $LABEL ${TARGET}${CHANNEL}-$DATE*-$LABEL.mp3"
+# Pruefen, ob LABEL gesetzt und id3v2 vorhanden
+if [ -z "$LABEL" ] ;  then
+	warn "Kein Label gesetzt, Metadaten werden nicht angepasst"
+elif [ -z "`which id3v2`" ] ; then
+	warn "Programm id3v2 nicht vorhanden, Metadaten werden nicht angepasst"
+else
+   debug "Aktualisiere Metadaten mit folgendem Aufruf \n id3v2 -a $CHANNEL -A $LABEL ${TARGET}${CHANNEL}-$DATE*-$LABEL.mp3"
    id3v2 -a $CHANNEL -A $LABEL ${TARGET}${CHANNEL}-$DATE*-$LABEL.mp3
 fi
 
@@ -174,11 +179,11 @@ done
 
 if [ $(($USED_RATE+0)) -gt $(($MAX_USED_SPACE_RATE_WARN+0)) ] && [ x$WARNINGTOOL != x ] ; then
 	WARNING_DISKSPACE="Achtung: Partition des Zielverzeichnisses $TARGET zu ${USED_RATE}% belegt. $CHANNEL - $DATE - $LABEL "
-	if [ -e /tmp/.warnsms ]; then
-        	warn "Already send text message: $WARNING_DISKSPACE"
+	if [ -e /tmp/.dradio_warn ]; then
+        	warn "Already send warn message: $WARNING_DISKSPACE"
 	else
         	touch /tmp/.warnsms
-		debug $WARNINGTOOL $WARNINGTOOL_OPT $WARNING_DISKSPACE
+		debug "Sende Warnmeldung mit folgendem Aufruf: \n $WARNINGTOOL $WARNINGTOOL_OPT $WARNING_DISKSPACE
 		$WARNINGTOOL $WARNINGTOOL_OPT $WARNING_DISKSPACE
 	fi
 fi

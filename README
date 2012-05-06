@@ -4,7 +4,7 @@ Bitte dort nachsehen.
 Installation:
 
 - Im Pfad ablegen (z.B. /usr/local/bin/) und ausführbahr machen.
-- Variablen im Skript anpassen (vor allem TARGET)
+- Variablen im Skript anpassen (vor allem TARGET) oder config anlegen
 
 Vorraussetzungen:
 

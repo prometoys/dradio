@@ -92,13 +92,13 @@ error() {
 }
 
 debug() {
-	if [ ! -z $DEBUG ] ; then
+	if [ "$DEBUG" == "TRUE" ] ; then
 		echo -e $* >&2
 	fi
 }
 
 warn() {
-	if [ ! -z $WARN ] ; then
+	if [ "$WARN" == "TRUE" ] ; then
 		echo -e $* >&2
 	fi
 }

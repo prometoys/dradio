@@ -1,18 +1,18 @@
 #!/bin/bash
 
-# Copyleft 2010 by Keywan Najafi Tonekaboni, me@prometoys.net 
+# Copyleft 2010 by Keywan Najafi Tonekaboni, me@prometoys.net
 # http://prometoys.net
 # Dieses Wrapper-Skript für Streamripper steht unter GPL v. 3
 
 
 # Das ist ein ganz einfaches Skript zum Aufnehmen von Radio-Sendungen per
 # Streamripper. Anstelle der ganzen Optionen von Streamripper reicht ein
-# ganz einfacher Aufruf: 
+# ganz einfacher Aufruf:
 
 # Aufnahme von DRadio Wissen für 60 Minuten mit Label:
 # dradio dwissen 60 hoersaal
 
-# Das Skript nimmt immer in einem einzigen Happen auf. Weitere Tips zur 
+# Das Skript nimmt immer in einem einzigen Happen auf. Weitere Tips zur
 # Bedienung weiter unten.
 
 # Zum Start folgende Angaben bearbeiten:
@@ -22,12 +22,12 @@
 
 TARGET="/tmp/"
 
-#  Maximalle Füllrate in Prozent. Ist auf der angegebenen Partition mehr  
-#  Platz belegt, wird die Aufnahme nicht gestartet. 
+#  Maximalle Füllrate in Prozent. Ist auf der angegebenen Partition mehr
+#  Platz belegt, wird die Aufnahme nicht gestartet.
 
 MAX_USED_SPACE_RATE=98
 
-# Wenn die maximale Füllrate fast erreicht ist, kann auch ein Tool zum 
+# Wenn die maximale Füllrate fast erreicht ist, kann auch ein Tool zum
 # vorzeitigen Warnen genutzt werden.
 
 MAX_USED_SPACE_RATE_WARN=90
@@ -35,8 +35,8 @@ MAX_USED_SPACE_RATE_WARN=90
 # WARNINGTOOL="/usr/local/bin/gesms" # e.g. tool to send sms/text message
 # WARNINGTOOL_OPT=0123456789 # e.g. mobile number
 
-# USERAGENT: So gibt sich Streamripper gegenüber dem Server aus. Um eine 
-# Aussperrung zu vermeiden, versucht einen gültigen Agent zu ergattern. 
+# USERAGENT: So gibt sich Streamripper gegenüber dem Server aus. Um eine
+# Aussperrung zu vermeiden, versucht einen gültigen Agent zu ergattern.
 # Ein paar Beispiele:
 #
 # Mozilla/4.0 (compatible; MSIE 7.0b; Windows NT 6.0)
@@ -53,7 +53,7 @@ USERAGENT='"Microsoft-WebDAV-MiniRedir/6.1.7600"'
 
 OPT=""
 
-# Falls am Desktop gestartet und notify-send installiert ist, gibt es 
+# Falls am Desktop gestartet und notify-send installiert ist, gibt es
 # die Möglichkeit Benachrichtigungen anzuzeigen. Dazu auf TRUE umstellen.
 
 MESSAGING=FALSE
@@ -72,7 +72,7 @@ MESSAGING=FALSE
 # Beispiel: 46m DLF aufnehmen an jedem Montag um 19:14 Uhr
 #
 # 14 19 * * 2 /usr/local/bin/dradio dlf 46 feature >/dev/null 2>&1 # DLF Feature
-# 
+#
 # Zeitgesteuerte Aufnahme mit at:
 # at aufrufen mit z.B.: az 19:14
 # Befehl eingeben: /usr/local/bin/dradio dlf 46 feature
@@ -87,15 +87,38 @@ CHANNEL=$1
 LABEL=""
 DATE=`date +%Y_%m_%d_%H`
 
+error() {
+	echo -e $* >&2
+}
+
+debug() {
+	if [ ! -z $DEBUG ] ; then
+		echo -e $* >&2
+	fi
+}
+
+warn() {
+	if [ ! -z $WARN ] ; then
+		echo -e $* >&2
+	fi
+}
+
+# TODO getopts
+#TODO  anders, bitte mind. einen par. angeben
 if [ $# -lt 1 ] ; then
-	echo "Kein Sender gewählt: $SENDER"
+	error "Kein Sender gewählt: $SENDER"
 	exit 1
 fi
 
-USED_RATE=`df -h $TARGET | grep ^/ | cut -c 40-42`
+# z.B. kein oder leerer Channel uebergeben mit ""
+if [ -z "$CHANNEL" ] ; then
+	error "Kein Sender gewählt: $SENDER"
+	exit 1
+fi
+
+USED_RATE=$(df $TARGET | awk '$3 ~ /[0-9]+/ { print $5 }' |  sed -e "s/%//")
 if [ $(($USED_RATE+0)) -ge $MAX_USED_SPACE_RATE ] ; then
-	echo "Partition des Zielverzeichnisses $TARGET zu ${USED_RATE}% belegt.
-Keine Aufnahme, da zuwenig freier Speicher."
+	error "Partition des Zielverzeichnisses $TARGET zu ${USED_RATE}% belegt.\n Keine Aufnahme, da zuwenig freier Speicher."
 	exit 1
 fi
 
@@ -107,49 +130,41 @@ if [ $# -gt 2 ] ; then
 	LABEL=$3
 fi
 
-if [ $CHANNEL == dlf ] ; then
-	STREAM="http://dradio.ic.llnwd.net/stream/dradio_dlf_m_a"
-elif [ $CHANNEL == dkultur ] ; then
-	STREAM="http://dradio.ic.llnwd.net/stream/dradio_dkultur_m_a"
-elif [ $CHANNEL == dwissen ] ; then
-	STREAM="http://dradio.ic.llnwd.net/stream/dradio_dwissen_m_a"
-elif [ $CHANNEL == 1live ] || [ $CHANNEL == l1ve ] ; then
-	STREAM="http://gffstream.ic.llnwd.net/stream/gffstream_stream_wdr_einslive_a"
-elif [ $CHANNEL == wdr2 ] ; then
-	STREAM="http://gffstream.ic.llnwd.net/stream/gffstream_w17a"
-elif [ $CHANNEL == wdr3 ] ; then
-	STREAM="http://gffstream.ic.llnwd.net/stream/gffstream_w21a"
-elif [ $CHANNEL == wdr4 ] ; then
-	STREAM="http://gffstream.ic.llnwd.net/stream/gffstream_w18b"
-elif [ $CHANNEL == wdr5 ] ; then
-	STREAM="http://gffstream.ic.llnwd.net/stream/gffstream_w19b"
-elif [ $CHANNEL == fhe ] ; then
-	STREAM="http://gffstream.ic.llnwd.net/stream/gffstream_w20a"
-elif [ $CHANNEL == on3radio ] ; then
-	STREAM="http://gffstream.ic.llnwd.net/stream/gffstream_w9b"
-elif [ $CHANNEL == hertz ] ; then
-	STREAM="http://stream.radiohertz.de/hertz-q5.ogg"
-elif [ $CHANNEL == hertzlab ] ; then
-	STREAM="http://streamlab.radiohertz.de/hertz-q5.ogg"
+#TODO In Config auslagern
+STATION_FILE=$HOME/.config/dradio/sender.list
+
+# Stream-URL aus Senderliste ermitteln
+if [ -r $STATION_FILE ] ; then
+	STREAM=$(grep -w ^$CHANNEL $STATION_FILE | awk '{ print $2 }' | tail -n 1)
 else
-	echo "$CHANNEL ist kein gueltiger Sender: $SENDER"
+	error "Senderliste $STATION_FILE nicht gefunden"
+fi
+
+# Pruefen, ob gueltiger Sender gefunden wurde.
+if [ -z "$STREAM" ] ; then
+	error "$CHANNEL ist kein gueltiger Sender: $SENDER"
 	exit 1
 fi
 
-echo "Starte Aufname"
-#echo streamripper $STREAM -d $TARGET -s -a "$CHANNEL-%d-$LABEL" $OPT -u $USERAGENT -A  --quiet
-streamripper $STREAM -d $TARGET -s -a "$CHANNEL-%d-$LABEL" $OPT -u $USERAGENT -A -i --quiet
+debug "Starte Aufname"
+
+# Pruefen, ob Skript aus dem Terminal oder an einer Pipe aufgerufen wird.
+if [ -t 1 ] ; then
+	streamripper $STREAM -d $TARGET -s -a "$CHANNEL-%d-$LABEL" $OPT -u $USERAGENT -A -i --quiet
+else
+	echo "streamripper $STREAM -d $TARGET -s -a \"$CHANNEL-%d-$LABEL\" $OPT -u $USERAGENT -A -i --quiet"
+fi
 
 # ID3-Tag setzten
 if [ x$LABEL != x ] ; then
-   echo "id3v2 -a $CHANNEL -A $LABEL ${TARGET}${CHANNEL}-$DATE*-$LABEL.mp3"
+   debug "id3v2 -a $CHANNEL -A $LABEL ${TARGET}${CHANNEL}-$DATE*-$LABEL.mp3"
    id3v2 -a $CHANNEL -A $LABEL ${TARGET}${CHANNEL}-$DATE*-$LABEL.mp3
 fi
 
 CUEFILES=${TARGET}${CHANNEL}-`date +%Y_%m_%d_`*.cue
 for FILE in $CUEFILES ; do
 	if [ -f $FILE ] ; then
-		echo "Aufraeumen: $FILE"
+		debug "Aufraeumen: $FILE"
 		rm $FILE
 	fi
 done
@@ -160,10 +175,10 @@ done
 if [ $(($USED_RATE+0)) -gt $(($MAX_USED_SPACE_RATE_WARN+0)) ] && [ x$WARNINGTOOL != x ] ; then
 	WARNING_DISKSPACE="Achtung: Partition des Zielverzeichnisses $TARGET zu ${USED_RATE}% belegt. $CHANNEL - $DATE - $LABEL "
 	if [ -e /tmp/.warnsms ]; then
-        	echo "Already send text message: $WARNING_DISKSPACE"
+        	warn "Already send text message: $WARNING_DISKSPACE"
 	else
         	touch /tmp/.warnsms
-		echo $WARNINGTOOL $WARNINGTOOL_OPT $WARNING_DISKSPACE
+		debug $WARNINGTOOL $WARNINGTOOL_OPT $WARNING_DISKSPACE
 		$WARNINGTOOL $WARNINGTOOL_OPT $WARNING_DISKSPACE
 	fi
 fi

@@ -58,6 +58,9 @@ OPT=""
 
 MESSAGING=FALSE
 
+# Senderliste
+STATION_FILE=$HOME/.config/dradio/sender.list
+
 # Aufruf: dradio SENDER [ ZEIT ] [ LABEL ]
 # SENDER: siehe $SENDER
 # ZEIT: Länge der Aufnahme in Minuten (optional)
@@ -78,11 +81,13 @@ MESSAGING=FALSE
 # Befehl eingeben: /usr/local/bin/dradio dlf 46 feature
 # Enter drücken, dann CTRL+D
 
+if [ -r "$HOME/.config/dradio/dradio.config" ]; then
+	. "$HOME/.config/dradio/dradio.config"
+fi
 
 # Variablen für das Skript, besser nicht ändern ;)
 TIME="60"
 STREAM=""
-# SENDER="dlf, dradio, dwissen, wdr[2,3,4,5], 1live, fhe, on3radio"
 CHANNEL=$1
 LABEL=""
 
@@ -123,8 +128,6 @@ if [ $# -gt 2 ] ; then
 	LABEL=$3
 fi
 
-#TODO In Config auslagern
-STATION_FILE=$HOME/.config/dradio/sender.list
 
 # Stream-URL aus Senderliste ermitteln
 if [ -r $STATION_FILE ] ; then

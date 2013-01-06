@@ -49,6 +49,8 @@ MAX_USED_SPACE_RATE_WARN=90
 
 USERAGENT='"Microsoft-WebDAV-MiniRedir/6.1.7600"'
 
+USERNAME=`whoami`
+
 # Optionale Argumente für Streamripper
 
 OPT=""
@@ -196,7 +198,7 @@ if [ $MESSAGING == TRUE ] ; then
 	TITLE="Aufnahme $CHANNEL $LABEL"
 	NOTIFY_TIME="6000"
 	QUIET=""
-	export DISPLAY=`w | awk '/x-session/ || /gnome-session/ {print $3}'`
+	export DISPLAY=`w $USERNAME | awk '$3 ~ /:[0-9]+/ {print $3; exit}'`
 
 	if [ -n "`which notify-send`" ] && [ -n "$DISPLAY" ] ; then
 	    notify-send "$TITLE" "$MESSAGE" -t $NOTIFY_TIME -u normal -i gtk-dialog-info

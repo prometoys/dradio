@@ -198,9 +198,12 @@ if [ $MESSAGING == TRUE ] ; then
 	TITLE="Aufnahme $CHANNEL $LABEL"
 	NOTIFY_TIME="6000"
 	QUIET=""
-	export DISPLAY=`w $USERNAME | awk '$3 ~ /:[0-9]+/ {print $3; exit}'`
+	export DISPLAY=`who | awk "/\\(:[0-9]+\\)/ {gsub(\"[:|(|)]\",\"\"); if (\$1 == \"$USERNAME\") {print \":\"\$5; exit }}"`
+	debug "Erzeuge Benachrichtigung '$TITLE: $MESSAGE' auf DISPLAY $DISPLAY für ${NOTIFY_TIME}ms"
 
 	if [ -n "`which notify-send`" ] && [ -n "$DISPLAY" ] ; then
 	    notify-send "$TITLE" "$MESSAGE" -t $NOTIFY_TIME -u normal -i gtk-dialog-info
+	else
+	  error "Konnte Benachrichtigung nicht erzeugen"
 	fi
 fi

@@ -82,10 +82,9 @@ MESSAGING=FALSE
 # Variablen für das Skript, besser nicht ändern ;)
 TIME="60"
 STREAM=""
-SENDER="dlf, dradio, dwissen, wdr[2,3,4,5], 1live, fhe, on3radio"
+# SENDER="dlf, dradio, dwissen, wdr[2,3,4,5], 1live, fhe, on3radio"
 CHANNEL=$1
 LABEL=""
-DATE=`date +%Y_%m_%d_%H`
 
 error() {
 	echo -e $* >&2
@@ -104,15 +103,9 @@ warn() {
 }
 
 # TODO getopts
-#TODO  anders, bitte mind. einen par. angeben
-if [ $# -lt 1 ] ; then
-	error "Kein Sender gewählt: $SENDER"
-	exit 1
-fi
-
 # z.B. kein oder leerer Channel uebergeben mit ""
-if [ -z "$CHANNEL" ] ; then
-	error "Kein Sender gewählt: $SENDER"
+if [ $# -lt 1 ] || [ -z "$CHANNEL" ] ; then
+	error "Kein Sender gewählt..."
 	exit 1
 fi
 
@@ -135,18 +128,21 @@ STATION_FILE=$HOME/.config/dradio/sender.list
 
 # Stream-URL aus Senderliste ermitteln
 if [ -r $STATION_FILE ] ; then
-	STREAM=$(grep -w ^$CHANNEL $STATION_FILE | awk '{ print $2 }' | tail -n 1)
+	STREAM=$(awk "/^$CHANNEL/ {print \$2; exit}" < $STATION_FILE)
 else
 	error "Senderliste $STATION_FILE nicht gefunden"
 fi
 
 # Pruefen, ob gueltiger Sender gefunden wurde.
 if [ -z "$STREAM" ] ; then
+	SENDER=$(awk "/^\\S/ {printf(\"%s \", \$1)}" < $STATION_FILE)
 	error "$CHANNEL ist kein gueltiger Sender: $SENDER"
 	exit 1
 fi
 
 debug "Starte Aufname"
+
+DATE=`date +%Y_%m_%d_%H_%M`
 
 # Pruefen, ob Skript aus dem Terminal oder an einer Pipe aufgerufen wird.
 if [ -t 1 ] ; then
@@ -183,7 +179,7 @@ if [ $(($USED_RATE+0)) -gt $(($MAX_USED_SPACE_RATE_WARN+0)) ] && [ x$WARNINGTOOL
         	warn "Already send warn message: $WARNING_DISKSPACE"
 	else
         	touch /tmp/.warnsms
-		debug "Sende Warnmeldung mit folgendem Aufruf: \n $WARNINGTOOL $WARNINGTOOL_OPT $WARNING_DISKSPACE
+		debug "Sende Warnmeldung mit folgendem Aufruf: \n $WARNINGTOOL $WARNINGTOOL_OPT $WARNING_DISKSPACE"
 		$WARNINGTOOL $WARNINGTOOL_OPT $WARNING_DISKSPACE
 	fi
 fi
@@ -197,9 +193,9 @@ if [ $MESSAGING == TRUE ] ; then
 	TITLE="Aufnahme $CHANNEL $LABEL"
 	NOTIFY_TIME="6000"
 	QUIET=""
-	export DISPLAY=`w | grep x-session | cut -c 19-21 | sed -e "s/ $//"`
+	export DISPLAY=`w | awk '/x-session/ || /gnome-session/ {print $3}'`
 
-	if [ x`which notify-send` != x ] && [ x$DISPLAY != x ] ; then
+	if [ -n "`which notify-send`" ] && [ -n "$DISPLAY" ] ; then
 	    notify-send "$TITLE" "$MESSAGE" -t $NOTIFY_TIME -u normal -i gtk-dialog-info
 	fi
 fi

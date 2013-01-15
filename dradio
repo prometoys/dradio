@@ -79,7 +79,7 @@ STATION_FILE=$HOME/.config/dradio/sender.list
 # 14 19 * * 2 /usr/local/bin/dradio dlf 46 feature >/dev/null 2>&1 # DLF Feature
 #
 # Zeitgesteuerte Aufnahme mit at:
-# at aufrufen mit z.B.: az 19:14
+# at aufrufen mit z.B.: at 19:14
 # Befehl eingeben: /usr/local/bin/dradio dlf 46 feature
 # Enter drücken, dann CTRL+D
 

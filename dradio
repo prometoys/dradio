@@ -93,6 +93,11 @@ STREAM=""
 CHANNEL=$1
 LABEL=""
 
+
+if [ "$DEBUG" == "TRUE" ] ; then
+	WARN="TRUE"
+fi
+
 error() {
 	echo -e $* >&2
 }
@@ -149,12 +154,12 @@ debug "Starte Aufname"
 
 DATE=`date +%Y_%m_%d_%H_%M`
 
-# Pruefen, ob Skript aus dem Terminal oder an einer Pipe aufgerufen wird.
-if [ -t 1 ] ; then
-	streamripper $STREAM -d $TARGET -s -a "$CHANNEL-%d-$LABEL" $OPT -u $USERAGENT -A -i --quiet
-else
-	echo "streamripper $STREAM -d $TARGET -s -a \"$CHANNEL-%d-$LABEL\" $OPT -u $USERAGENT -A -i --quiet"
-fi
+## Pruefen, ob Skript aus dem Terminal oder an einer Pipe aufgerufen wird.
+# if [ -t 1 ] ; then
+# 	streamripper $STREAM -d $TARGET -s -a "$CHANNEL-%d-$LABEL" $OPT -u $USERAGENT -A -i --quiet
+# else
+# 	echo "streamripper $STREAM -d $TARGET -s -a \"$CHANNEL-%d-$LABEL\" $OPT -u $USERAGENT -A -i --quiet"
+# fi
 
 # ID3-Tag setzten
 # Pruefen, ob LABEL gesetzt und id3v2 vorhanden

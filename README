@@ -22,6 +22,9 @@ SENDER: dlf, dkultur,... siehe Skript
 ZEIT: Aufnahmedauer in Minuten
 LABEL: Zeichenkette die zum Dateinamen hinzugefügt wird.
 
-
+Zeitgesteuerte Aufnahme mit at:
+# at aufrufen mit z.B.: at 19:14
+# Befehl eingeben: /usr/local/bin/dradio dlf 46 feature
+# Enter drücken, dann CTRL+D
 
 

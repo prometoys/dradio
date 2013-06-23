@@ -156,7 +156,7 @@ DATE=`date +%Y_%m_%d_%H_%M`
 
 ## Pruefen, ob Skript aus dem Terminal oder an einer Pipe aufgerufen wird.
 # if [ -t 1 ] ; then
-# 	streamripper $STREAM -d $TARGET -s -a "$CHANNEL-%d-$LABEL" $OPT -u $USERAGENT -A -i --quiet
+ 	streamripper $STREAM -d $TARGET -s -a "$CHANNEL-%d-$LABEL" $OPT -u $USERAGENT -A -i --quiet
 # else
 # 	echo "streamripper $STREAM -d $TARGET -s -a \"$CHANNEL-%d-$LABEL\" $OPT -u $USERAGENT -A -i --quiet"
 # fi
